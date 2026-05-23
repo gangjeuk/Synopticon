@@ -11,11 +11,61 @@ from utils import Config
 import seaborn as sns
 
 
+<<<<<<< Updated upstream
 def boxplot(fig = None, ax = None, do_lie = False, tactic: Literal["random", "select"] = "random"):
     if do_lie is True:
         benign, cheater, _ = simulate_with_liar(model_acc=0.8, played_match=20, vote_per_match=1, benign_num=2, cheater_num=1, tactic=tactic)
     elif do_lie is False:
         benign, cheater, _ = simulate_without_liar(model_acc=0.8, played_match=20, vote_per_match=1, benign_num=2, cheater_num=1)
+=======
+# Default values
+BENIGN_NUM = 2
+CHEATER_NUM = 1
+
+LIE_TYPE: Literal["radom", "select"] = "random"
+LIE_FREQ = 0.5
+
+REPORT_CNT = 3
+
+MODEL_ACC = 0.9
+
+################# Non lier ####################
+def simulate_without_liar(
+    report_cnt=REPORT_CNT,
+    test_cnt=1,
+    model_acc=MODEL_ACC,
+    benign_num=BENIGN_NUM,
+    cheater_num=CHEATER_NUM,
+):
+    """
+    report_cnt: Means number of game played. Server is being initalized for each game
+    test_cnt: Means number of voting in one game
+    """
+    # We don't need to check validity because no one lies
+    # Therefore, only check "dubious"
+    user_lst = [Benign(i, model_acc) for i in range(benign_num)]
+    user_lst += [Cheater(i, model_acc, is_lier=False) for i in range(cheater_num)]
+
+    benign, cheater = [], []
+    for _ in range(report_cnt):
+        # Reset Server and repeat evaluation for REPORT_CNT times
+        server = Server(benign_num, cheater_num)
+        # Evalute for test_cnt times
+        for _ in range(test_cnt):
+            server.simul_match(user_lst)
+        for user in user_lst:
+            dubi = server.dubious[user.name]
+            if user.name.startswith("user"):
+                benign.append(dubi)
+            elif user.name.startswith("cheater"):
+                cheater.append(dubi)
+
+    return benign, cheater, server
+
+
+def boxplot_for_nonlier(fig = None, ax = None):
+    benign, cheater, _ = simulate_without_liar(model_acc=0.9, report_cnt=20)
+>>>>>>> Stashed changes
 
     benign_dub = [benign[key][0] for key in benign.keys()]
     cheater_dub = [cheater[key][0] for key in cheater.keys()]
@@ -146,6 +196,233 @@ def plot_one_third_cheater(fig = None, ax = None, do_lie = False, tactic: Litera
 
     return fig, ax
 
+<<<<<<< Updated upstream
+=======
+##############################################
+
+#################### Lier ####################
+
+
+def simulate_with_liar(
+    report_cnt=REPORT_CNT,
+    test_cnt=1,
+    model_acc=MODEL_ACC,
+    benign_num=BENIGN_NUM,
+    cheater_num=CHEATER_NUM,
+):
+    """
+    report_cnt: Counting for send-recv - EX) battle for 5 times
+    test_cnt: Test count per 1 report - EX) there was 2 report at first battle
+    """
+    # We don't need to check validity because no one lies
+    # Therefore, only check "dubious"
+    user_lst = [Benign(i, model_acc) for i in range(benign_num)]
+    user_lst += [
+        Cheater(i, model_acc, is_lier=True, lier_type=LIE_TYPE, lie_freq=LIE_FREQ)
+        for i in range(cheater_num)
+    ]
+
+    benign, cheater = [], []
+    for _ in range(report_cnt):
+        # Reset Server and repeat evaluation for REPORT_CNT times
+        server = Server(benign_num, cheater_num)
+        # Evalute for test_cnt times
+        for _ in range(test_cnt):
+            server.simul_match(user_lst)
+        for user in user_lst:
+            dubi = server.dubious[user.name]
+            if user.name.startswith("user"):
+                benign.append(dubi)
+            elif user.name.startswith("cheater"):
+                cheater.append(dubi)
+
+    return benign, cheater, server # TODO server 리팩토링
+
+
+def boxplot_for_lier(fig = None, ax = None):
+    benign, cheater = simulate_with_liar(model_acc=0.9, report_cnt=20)
+
+    if ax is None:
+        fig, ax = plt.subplots()
+    ax.boxplot([benign, cheater])
+    ax.set_ylim(-1.0, 1.0)
+    ax.set_ylabel("Dubious")
+    ax.set_xticks([1, 2], ["Benign user", "Cheating User"])
+    return fig, ax
+
+# 그래프 의미: 모델 정확성이 증가할 수록
+# 일반 유저와 치터를 잘 구분할 수 있다
+def scatter_and_line_for_lier(fig = None, ax = None):
+    model_acc = np.linspace(1.0, 0.5, 100).tolist()
+
+    benign_scat, cheater_scat = {"acc": [], "val": []}, {"acc": [], "val": []}
+    benign_line, cheater_line = [], []
+
+    for acc in model_acc:
+        # function call below assume
+        # total 3 battles and 2 reports per 1 battle
+        benign, cheater = simulate_with_liar(report_cnt=10, test_cnt=2, model_acc=acc)
+        # scatter
+        benign_scat["acc"] += [acc for _ in benign]
+        benign_scat["val"] += benign
+        cheater_scat["acc"] += [acc for _ in cheater]
+        cheater_scat["val"] += cheater
+        # line
+        benign_line.append(sum(benign) / len(benign))
+        cheater_line.append(sum(cheater) / len(cheater))
+
+    if fig is None and ax is None:
+        fig, ax = plt.subplots()
+    ax.set_ylim(-1.2, 1.2)
+    ax.set_ylabel("Dubious")
+    ax.set_xlabel("Model Acc")
+
+    # plot
+    ax.plot(model_acc, benign_line, label="Benign user")
+    ax.plot(model_acc, cheater_line, label="Cheating user")
+    ax.legend(loc='upper left')
+
+    # scatter
+    # ax.scatter('acc', 'val', data=benign_scat)
+    # ax.scatter('acc', 'val', data=cheater_scat)
+
+    # trendline
+    z = np.polyfit(benign_scat["acc"], benign_scat["val"], 1)
+    p = np.poly1d(z)
+    ax.plot(benign_scat["acc"], p(benign_scat["acc"]), "b--")
+    z = np.polyfit(cheater_scat["acc"], cheater_scat["val"], 1)
+    p = np.poly1d(z)
+    ax.plot(cheater_scat["acc"], p(cheater_scat["acc"]), "r--")
+
+    return fig, ax
+
+
+def contour_for_lier(fig = None, ax = None):
+    """
+    input: (치팅 사용자 비율, 모델 정확성, 거짓말쟁이 비율)
+        치팅 사용자 비율: 전체 사용자 500명으로 설정 최대 50% 까지 - 사용자가 5000인 이유는 세세한 평가치를 만들기위해
+        모델 정확성: 1.0에서 0.5까지
+        거짓말쟁이 비율: 1.0에서 0.5까지 --> 현재 글로벌 변수로 관리하고 있음 고처야함(TODO)
+    output: 시뮬레이션 정확성
+        정확성: 정답 판정의 경우 Non cheater의 경우 의심도 양, Cheater의 경우 음일 경우를 옳바른 경우로 따진다
+
+    -- 그래프 결과: 거짓말 하는 유저가 존재하지 않느다면, 모델 정확성이 0.8 이상을 만족할 경우 치터/비치터를 구분할 수 있다
+    ++ 그래프 결과: 거짓말 하는 유저가 한다면, 치팅 사용자 비율에 따라서 모델 정확성인 0.9 이상을 만족해야지 치터/비치터를 구분할 수 있다
+    """
+    TOTAL_USER = 50
+    model_acc = np.linspace(1.0, 0.5, TOTAL_USER // 2).tolist()
+    cheat_rate = []
+    sim_acc = []
+
+    for cheat in range(TOTAL_USER // 2):
+        cheat_rate.append(cheat / TOTAL_USER)
+        sim_ret = []
+        for acc in model_acc:
+            benign, cheater = simulate_with_liar(
+                REPORT_CNT, 2, acc, TOTAL_USER - cheat, cheat
+            )
+            correct = len(list(filter(lambda x: x < 0, benign))) + len(
+                list(filter(lambda x: x > 0, cheater))
+            )
+            sim_ret.append(correct / (TOTAL_USER * REPORT_CNT))
+        sim_acc.append(sim_ret)
+
+    if fig is None and ax is None:
+        fig, ax = plt.subplots()
+    ax.set_ylabel("Cheater Rate")
+    ax.set_xlabel("Model Acc")
+    X, Y = np.meshgrid(model_acc, cheat_rate)
+    co = ax.contourf(X, Y, sim_acc, levels=np.linspace(0.5, 1.0, 11), extend='min')
+    fig.colorbar(co, ax=ax)
+    
+    return fig, ax
+
+def plot_for_liar(fig = None, ax = None):
+    """
+    input: (치팅 사용자 비율, 모델 정확성, 거짓말쟁이 비율)
+        치팅 사용자 비율: 전체 사용자 500명으로 설정 최대 50% 까지 - 사용자가 5000인 이유는 세세한 평가치를 만들기위해
+        모델 정확성: 1.0에서 0.5까지
+        거짓말쟁이 비율: 1.0에서 0.5까지 --> 현재 글로벌 변수로 관리하고 있음 고처야함(TODO)
+    output: 시뮬레이션 정확성
+        정확성: 정답 판정의 경우 Non cheater의 경우 의심도 양, Cheater의 경우 음일 경우를 옳바른 경우로 따진다
+
+    -- 그래프 결과: 거짓말 하는 유저가 존재하지 않느다면, 모델 정확성이 0.8 이상을 만족할 경우 치터/비치터를 구분할 수 있다
+    ++ 그래프 결과: 거짓말 하는 유저가 한다면, 치팅 사용자 비율에 따라서 모델 정확성인 0.9 이상을 만족해야지 치터/비치터를 구분할 수 있다
+    """
+    TOTAL_USER = 100
+    cheater_num = 33
+    model_acc = np.linspace(1.0, 0.5, TOTAL_USER // 2).tolist()
+
+    sim_ret = []
+    for acc in model_acc:
+        benign, cheater = simulate_with_liar(
+            REPORT_CNT, 2, acc, TOTAL_USER - cheater_num, cheater_num
+        )
+        correct = len(list(filter(lambda x: x < 0, benign))) + len(
+            list(filter(lambda x: x > 0, cheater))
+        )
+        sim_ret.append(correct / (TOTAL_USER * REPORT_CNT))
+
+    if fig is None and ax is None:
+        fig, ax = plt.subplots()
+    ax.plot(model_acc, sim_ret, 'o-')
+    ax.set_ylabel("Accuracy")
+    ax.set_xlabel("Model Acc")
+
+    return fig, ax
+
+
+def __contour_for_lier(fig, ax):
+    """
+    input: (치팅 사용자 비율, 모델 정확성, 거짓말쟁이 비율)
+        치팅 사용자 비율: 전체 사용자 500명으로 설정 최대 50% 까지 - 사용자가 5000인 이유는 세세한 평가치를 만들기위해
+        모델 정확성: 1.0에서 0.5까지
+        거짓말쟁이 비율: 1.0에서 0.5까지 --> 현재 글로벌 변수로 관리하고 있음 고처야함(TODO)
+    output: 시뮬레이션 정확성
+        정확성: 정답 판정의 경우 Non cheater의 경우 의심도 양, Cheater의 경우 음일 경우를 옳바른 경우로 따진다
+
+    -- 그래프 결과: 거짓말 하는 유저가 존재하지 않느다면, 모델 정확성이 0.8 이상을 만족할 경우 치터/비치터를 구분할 수 있다
+    ++ 그래프 결과: 거짓말 하는 유저가 한다면, 치팅 사용자 비율에 따라서 모델 정확성인 0.9 이상을 만족해야지 치터/비치터를 구분할 수 있다
+    """
+    TOTAL_USER = 20
+    model_acc = np.linspace(1.0, 0.5, TOTAL_USER // 2).tolist()
+    cheat_rate = []
+    sim_acc = []
+
+    for cheat in range(TOTAL_USER // 2):
+        cheat_rate.append(cheat / TOTAL_USER)
+        sim_ret = []
+        for acc in model_acc:
+            benign, cheater = simulate_with_liar(
+                REPORT_CNT, 2, acc, TOTAL_USER - cheat, cheat
+            )
+            correct = len(list(filter(lambda x: x > 0, benign))) + len(
+                list(filter(lambda x: x < 0, cheater))
+            )
+            sim_ret.append(correct / (TOTAL_USER * REPORT_CNT))
+        sim_acc.append(sim_ret)
+
+    ax.set_ylabel("Cheater Rate")
+    ax.set_xlabel("Model Acc")
+    X, Y = np.meshgrid(model_acc, cheat_rate)
+    co = ax.contourf(X, Y, sim_acc, levels=np.linspace(0, 1.0, 11), extend='min')
+    ax.set_title(f"FREQ: {LIE_FREQ}")
+    fig.colorbar(co, ax=ax)
+
+
+def plot_how_stubborn_simple_version():
+    """
+    그래프 결과: 거짓말의 빈도(LIE_FREQ)의 변화와 상관없이 거의 비슷한 그림을 보여준다 = 식이 거짓말에 대해서 stubborn 하다. 즉 거짓말 하는 놈을 잘 걸러준다
+    """
+    global LIE_FREQ
+    fig, axs = plt.subplots(2, 3, layout="constrained")
+    for i in range(0, 6):
+        LIE_FREQ = 0.5 + 0.1 * i
+        __contour_for_lier(fig, axs[i // 3, i % 3])
+    plt.show()
+
+
+>>>>>>> Stashed changes
 
 def figure_1():
     global LIE_TYPE, LIE_FREQ
@@ -240,6 +517,7 @@ def boxplot_figure_3(fig = None, ax = None, normal_score = (), cheater_score = (
         fig, ax = plt.subplots()
     
 
+<<<<<<< Updated upstream
     ax.boxplot([normal_score[0], cheater_score[0]], labels=["Benign user", "Cheating User"])
     ax.set_ylabel("Dubious score", labelpad=0.0)
     
@@ -396,3 +674,7 @@ if __name__ == '__main__':
     figure_1()
     figure_2()
     figure_3()
+=======
+    #contour_for_lier(fig, axs[0, 2])
+    figure_1()
+>>>>>>> Stashed changes
