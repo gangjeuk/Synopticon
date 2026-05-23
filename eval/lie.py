@@ -13,12 +13,12 @@ if Config['debug']:
 else:
     logging.basicConfig(level=logging.INFO)
 
-########## Gynopticon #########
+########## Synopticon #########
 # evaluation result
 res = []
 table_output = pd.DataFrame()
 dubious_scores = {}
-########## Gynopticon-end #########
+########## Synopticon-end #########
 
 # split experiments into k folds
 for i,test_games in enumerate(e.splits):
@@ -100,7 +100,7 @@ for i,test_games in enumerate(e.splits):
 
     info('done\n\n')
 
-##################%%% Gynopticon %%%###################
+##################%%% Synopticon %%%###################
 
 
     info('Evaluation result loaded\n')
@@ -249,4 +249,4 @@ b_acc, b_prec, auc = np.average(res[:,:3], axis=0, weights=res[:,3])
 tp, tn, fp, fn = np.sum(res[:,4:8], axis=0, dtype=int)
 info(f'best_acc: {b_acc:.4f}, best_prec: {b_prec:.4f}, auc_roc: {auc:.4f}')
 info(f'TP: {tp}, TN: {tn}, FP: {fp}, FN: {fn}')
-##################%%% Gynopticon end %%%###################
+##################%%% Synopticon end %%%###################

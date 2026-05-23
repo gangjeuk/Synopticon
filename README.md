@@ -1,12 +1,12 @@
-# Gynopticon
+# Synopticon
 
-![Gynopticon overall](img/gynopticon_overall.png)
+![Synopticon overall](img/synopticon_overall.png)
 
-This repository contains the information about Gynopticon. If you interested in our virtual world simulator, [visit Vega](https://github.com/gangjeuk/Vega) instead.
+This repository contains the information about Synopticon. If you interested in our virtual world simulator, [visit Vega](https://github.com/gangjeuk/Vega) instead.
 
-Gynopticon is a new type of anti-cheat system that leveraging power of the normal users' consensus and detecting the cheating users. 
+Synopticon is a new type of anti-cheat system that leveraging power of the normal users' consensus and detecting the cheating users. 
 
-In addition, Gynopticon can be applied to any kinds of online competitve games.
+In addition, Synopticon can be applied to any kinds of online competitve games.
 
 # File structure and package dependency
 
@@ -28,7 +28,7 @@ Each directory and file in the repository are related with each section in the p
 
 |**Name**|**Description**|**Related Sections**|
 |--------|---------------|-----------------|
-|/model/model.py |Simulation code|Section 2 (Gynopticon: a...)|
+|/model/model.py |Simulation code|Section 2 (Synopticon: a...)|
 |/model/customized.py|Customized consensus algorithm for testing on FPS genre|Section 3 (Evaluation)|
 |/eval/eval.py|Evaluation when without liar|Section 3.5 (Results)|
 |/eval/lie.py|Evaluation when with liar|Section 3.5 (Results)|
@@ -61,7 +61,7 @@ $ python3 eval/eval.py
 $ python3 eval/lie.py
 ```
 
-If you want to conduct experiments on different condition, you have to delete files in /trained_models directory and change a seed number. For that you have to edit seed numbers in `/utils/__init__.py`, `/res/Botscreen/utils/util.py`. The files contain seed numbers for *Gynopticon (our project)*, *Botscreen (datasets and detection method)* each.
+If you want to conduct experiments on different condition, you have to delete files in /trained_models directory and change a seed number. For that you have to edit seed numbers in `/utils/__init__.py`, `/res/Botscreen/utils/util.py`. The files contain seed numbers for *Synopticon (our project)*, *Botscreen (datasets and detection method)* each.
 
 ## Figures
 
