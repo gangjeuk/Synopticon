@@ -78,4 +78,14 @@ Here's the summary of our paper.
 ![Abstract](img/abstract.png)
 
 # Citation
-WIP
+```
+@misc{kang2026synopticonconsensusbasedcheatingdetection,
+      title={Synopticon: Consensus-Based Cheating Detection System for Competitive Games}, 
+      author={Jeuk Kang and Jungheum Park},
+      year={2026},
+      eprint={2511.10992},
+      archivePrefix={arXiv},
+      primaryClass={cs.CR},
+      url={https://arxiv.org/abs/2511.10992}, 
+}
+```
